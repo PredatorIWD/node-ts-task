@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import express from 'express';
 
 interface Result {
   [hostname: string]: Array<string | { [key: string]: any[] }>;
@@ -61,15 +61,25 @@ async function processAllURLs(url: string): Promise<void> {
     const jsonData: JsonResponse = await response.json();
     jsonData.items.forEach(item => processURL(item.fileUrl));
 
-    // Log result and write to result.json for easier viewing
-    console.log('Result: ' + JSON.stringify(result, null, 2));
-    fs.writeFileSync('result.json', JSON.stringify(result, null, 2), 'utf-8');
-
   } catch (e) {
     console.log('Error: ' + e);
   }
 }
 
-(async () => {
-  await processAllURLs('https://rest-test-eight.vercel.app/api/test');
-})();
+
+// Serve result at /api/files
+const app = express();
+const port = 3000;
+
+app.get('/api/files', async (req, res) => {
+  try {
+    await processAllURLs('https://rest-test-eight.vercel.app/api/test');
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: 'URL processing failed: ' + e });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
