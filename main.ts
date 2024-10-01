@@ -1,4 +1,4 @@
-import { URL } from 'node:url';
+import * as fs from 'fs';
 
 interface Result {
   [hostname: string]: Array<string | { [key: string]: any[] }>;
@@ -22,7 +22,7 @@ function processURL(currentURL: string): void {
   }
 
   let currentLocation = result[parsedURL.hostname];
-  let pathParts = parsedURL.pathname.split('/').filter(Boolean); // filter empty strings
+  let pathParts = parsedURL.pathname.split('/').splice(1); // remove the first empty string created by split
 
   for (let i = 0; i < pathParts.length - 1; i++) {
 
@@ -45,7 +45,7 @@ function processURL(currentURL: string): void {
   }
 
   // Add file
-  if (pathParts.length > 0) {
+  if (pathParts[pathParts.length - 1] !== '') {
     currentLocation.push(pathParts[pathParts.length - 1]);
   }
 
@@ -61,7 +61,9 @@ async function processAllURLs(url: string): Promise<void> {
     const jsonData: JsonResponse = await response.json();
     jsonData.items.forEach(item => processURL(item.fileUrl));
 
-    console.log('Result: ' + JSON.stringify(result));
+    // Log result and write to result.json for easier viewing
+    console.log('Result: ' + JSON.stringify(result, null, 2));
+    fs.writeFileSync('result.json', JSON.stringify(result, null, 2), 'utf-8');
 
   } catch (e) {
     console.log('Error: ' + e);
